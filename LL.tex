@@ -213,14 +213,14 @@ Operational behaviour of the rules:
 Let us prove/program $A ⊗ B ⊸ B ⊗ A$. Putting everything as
 hypotheses, we must find some $p$ with
 %
-\[x : A ⊗ B, x : \p {(B ⊗ A)} ⊢ p\]
+\[x : A ⊗ B, y : \p {(B ⊗ A)} ⊢ p\]
 %
 Expanding the definition of negation:
 
 \begin{align*}
-  x : A ⊗ B, x : \p B \pa \p A ⊢ p\\
-  p & = \Let ⟨v:A,w:B⟩ = y \In  \\
-    & \quad \ConnectB x {t:\p B} {u ↔ w} {u : \p A} {t ↔ v}
+  x : A ⊗ B, y : \p B \pa \p A ⊢ p\\
+  p & = \Let ⟨v:A,w:B⟩ = x \In  \\
+    & \quad \ConnectB y {t:\p B} {t ↔ w} {u : \p A} {u ↔ v}
 \end{align*}
 
 
