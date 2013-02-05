@@ -110,9 +110,9 @@ We have a judgement $Γ ⊢ t$; with only hypotheses and no conclusion. Remarks:
 \and
 \inferrule[0]{ }{Γ,x:0 ⊢ \mathsf{dump~}Γ\mathsf{~into~} x} 
 \\
-  \inferrule[∀]{Γ,x:A[B/α] ⊢ b \\ B\text{~valid} }{Γ,z:∀α.A ⊢ \Let x = z∙B \In b }
-\and
   \inferrule[∃]{Γ,y:A ⊢ b}{Γ,z:∃α.A ⊢ \Let ⟨α,y⟩ = z \In b }
+\and
+  \inferrule[∀]{Γ,x:A[B/α] ⊢ b \\ B\text{~valid} }{Γ,z:∀α.A ⊢ \Let x = z∙B \In b }
 \end{mathpar}
 
 Explanation of the rules:
@@ -173,7 +173,7 @@ semantics naturally arise.
 The VM reduces/executes a number of closures concurrently. (Each closure can be thought of as a process.)
 A closure is a sequent together with an environment. An environment is, for each variable $x:A$ in the context:
 \begin{itemize}
-\item a memory area of layout $\layout A$ which can recieve data for the variable/channel. 
+\item a memory area of layout $\layout A$ which can recieve data for the variable
 \item a pointer to the converse memory area (of layout $\layout {\p
     A}$) in another closure's environment.
 \end{itemize} (Each variable can be thought of as a channel.)  Note
@@ -188,7 +188,7 @@ The translation of each type to a memory layout is: ($·$ indicates sequence, $|
   \layout{A \& B} &= \layout A \mid \layout B \\
   \layout{α} &=  ? \\
   \layout{!A} &= \text{pointer to}~\layout{A} \\
-  \layout{T} &= \epsilon & \text{for neutrals}
+  \layout{T} &= \epsilon & T ∈ \braces{⊤,⊥,0,1}
 \end{align*}
 
 Operational behaviour of the rules:
