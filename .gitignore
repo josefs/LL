@@ -4,4 +4,10 @@ cabal-dev
 *.hi
 *.chi
 *.chs.h
+*~
+*.pdf
 .virthualenv
+*.aux
+*.log
+*.out
+*.vtc

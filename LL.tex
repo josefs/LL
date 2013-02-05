@@ -1,0 +1,265 @@
+\documentclass[english]{lipics-stripped}
+% \usepackage[utf8]{inputenc}
+\usepackage{mathpartir}
+% \usepackage{amsmath}
+% \usepackage{amsthm}
+% \usepackage{amssymb}
+\usepackage{bussproofs}
+\usepackage{ cmll }
+\EnableBpAbbreviations
+
+\title{An ISWIM syntax for linear-logic sequents}
+\author{Jean-Philippe Bernardy}
+\affil{Chalmers University of Technology and University of Gothenburg\\
+  \texttt{bernardy@chalmers.se}}
+ \authorrunning{J-P. Bernardy}%optional
+
+\Copyright[nc-sa]%choose "nd" or "nc-nd"
+          {Jean-Philippe Bernardy}
+
+\input{unicodedefs.tex}
+
+\newenvironment{bloc}{\begin{array}[t]{@{}l@{}}}{\end{array}}
+\newcommand{\braces}[1]{\left\{ {#1} \right\} }
+
+\newcommand{\p}[1]{{#1}^{⊥}}
+\newcommand{\Let}{\mathsf{let}~}
+\newcommand{\In}{~\mathsf{in}~}
+\newcommand{\Fst}{\mathsf{fst} }
+\newcommand{\Snd}{\mathsf{snd} }
+\newcommand{\Inl}{\mathsf{inl}~}
+\newcommand{\Inr}{\mathsf{inr}~}
+\newcommand{\Case}{\mathsf{case}~}
+\newcommand{\Of}{\mathsf{~of}~}
+\newcommand{\Connect}[2]{\mathsf{connect}~#1~\mathsf{to}~\braces{#2}}
+\newcommand{\ConnectS}[5]{\Connect{#1}{#2 \In #3; #4 \In #5}}
+\newcommand{\ConnectB}[5]{\Connect{#1}{
+    \begin{array}{l@{\In}l}
+      #2 & #3 \\ #4 & #5     
+    \end{array}
+}}
+\newcommand{\newchan}[1]{\mathsf{new}_{#1}}
+\begin{document}
+
+\maketitle
+
+\def\pat{,}
+\def\loll{\multimap}
+\def\pa{\ensuremath{\parr}}
+
+\section{Core LL}
+
+\subsection{Syntax}
+neutral in parens
+\[
+\begin{array}{ccc}
+\text{conjunction} &   \text{disjuction} & \\
+ ⊗ ~ (1) &  \pa ~ (⊥) & \text{multiplicative}  \\
+ \& ~ (⊤) &  ⊕ ~ (0) & \text{additive}
+\end{array}
+\]
+
+\begin{tabular}{cc}
+{$A ⊗ B$} & $A$ and $B$ in parallel\\
+{$A \pa B$}& $A$ when $\p B$ is given, or vice versa. $A ⊸ B ≜ \p A \pa B$. \\
+{$A ⊕ B$}& Either $A$ or $B$ (the context choses which)\\
+{$A ~\&~ B$}& Either $A$ or $B$ (the program choses which)\\
+\end{tabular}
+
+\subsection{Types}
+
+We have a judgement $Γ ⊢ t$; with only hypotheses and no conclusion. Remarks:
+\begin{itemize}
+\item In fact, it is as if there were a single $⊥$ conclusion: $Γ ⊢ t
+  : ⊥$.  Essentially the programs are written in CPS.  Because the
+  return type is always the same, writing it is redundant, so we omit
+  it.
+\item This is inverted compared to the usual presentation of LL, which
+  has only conclusions.
+\item As usual in LL, we have only elimination rules; because
+  introduction rules are recovered using {\sc Ax} and {\sc Cut}.
+\item In sum, when we have an set of hypothesis, if the program is
+  ``fed'' inputs for all of them but one, the last one will ``spit
+  out'' a result.
+\end{itemize}
+
+\newcommand{\chan}[3]{#2 \stackrel{#1}{↔} #3}
+
+\begin{mathpar}
+\inferrule[Ax]{ }{ x : \p A, y : A ⊢ x ↔ y}
+\and
+\inferrule[Cut]{Γ, x:\p A ⊢ a \\ y:A, Δ ⊢ b }{Γ,Δ ⊢ \ConnectS {\newchan A} x a y b}
+\\
+\inferrule[⊗]{Γ, x : A, y : B, Δ ⊢ a}{Γ, z : A ⊗ B, Δ ⊢ \Let ⟨x,y⟩=z \In a}
+\and 
+\inferrule[\pa]{Γ, x:A ⊢ a\\ y:B, Δ ⊢ b}{ Γ, z:A\pa B, Δ ⊢ \ConnectS z x a y b}
+\\
+\begin{array}{c}
+\inferrule[\&-l]{Γ,x:A ⊢ a} { Γ,z:A~\&~B ⊢ \Let x = \Fst z \In a}\\
+\\ 
+\inferrule[\&-r]{Γ,y:B ⊢ b} { Γ,z:A~\&~B ⊢ \Let y = \Snd z \In b}\\
+\end{array}
+\and
+\inferrule[⊕]{Γ,x:A ⊢ a \\ Γ,y:B ⊢ b} { Γ,z:A⊕B ⊢ \Case z \Of \{ \Inl x ↦ a ; \Inr y ↦ b  \} }
+\\
+\inferrule[1]{Γ ⊢ a}{Γ, x:1 ⊢ \Let ⋄ = x \In a} 
+\and
+\inferrule[⊥]{ }{x:⊥ ⊢ x} 
+\\
+\text{no rule for ⊤}
+\and
+\inferrule[0]{ }{Γ,x:0 ⊢ \mathsf{dump~}Γ\mathsf{~into~} x} 
+\\
+  \inferrule[∀]{Γ,x:A[B/α] ⊢ b \\ B\text{~valid} }{Γ,z:∀α.A ⊢ \Let x = z∙B \In b }
+\and
+  \inferrule[∃]{Γ,y:A ⊢ b}{Γ,z:∃α.A ⊢ \Let ⟨α,y⟩ = z \In b }
+\end{mathpar}
+
+Explanation of the rules:
+\begin{itemize}
+\item {\sc Ax} plugs the  $x$ to $y$ (and vice-versa).
+
+  Remark: we do not know from the rule in isolation the ``direction of
+  travel'' of information.  Indeed, negation is involutive; so we can
+  just reverse the rule by substituting $\p A$ for $A$. 
+
+  However, if $A$ is a monomorphic base type, we can interpret the \emph{instance}
+  of the rule to be communication in a specific direction.
+
+
+\item {\sc Cut}: creates a new communication channel of type $A$;
+  naming the ends $x$ and $y$. Programs ``talking'' on either end
+  execute in parallel.
+
+  Note that the communication channel is ``one-shot''; but the type of
+  the channel may be a list/stream/what have you. There may even be
+  back and forth communication if the type involes eg. a linear arrows.
+
+  (iirc, Wadler 2012 makes the opposite choice).
+
+\item {\sc $⊗$}: Essentially no-op. Just gives names to more hypothesis.
+\item {\sc \pa}: executes two processes in parallel. Note that the
+  only with possible communication is via $z$; the parts $Γ$ and $Δ$
+  can be seen as separate memories in the rhs. The situation is
+  similar for {\sc Cut}.
+
+
+\item {\sc ⊕}: does case analysis
+\item {\sc \&}: choses a side
+\item Because there is no elim rule for ⊤, 0 can never be constructed.
+\end{itemize}
+TODO: exponentials.
+
+\subsection{Reduction rules (Incomplete)}
+
+\begin{mathpar}
+  \ConnectB {\newchan {A ⊗ B}} x {\ConnectS x v a w b} y {\Let ⟨t,u⟩=y \In c} \\ ~⟶~  \ConnectB {\newchan A} v {a} {t} {\ConnectB {\newchan B} w b u c }
+\end{mathpar}
+
+
+\begin{align*}
+\ConnectB {\newchan A} x {x ↔ z} y t & ~⟶~ t[z/x] \\ 
+\ConnectB {\newchan {A⊕B}} x {\Let z = \Fst x \In a} y {\Case y \Of \{ \Inl t ↦ b ; \Inr u ↦ c  \}} & ~⟶~ \ConnectB {\newchan A} z a t b \\
+\ConnectB {\newchan {}} {x:∀α.A} {\Let t = x ∙ B \In a} {y:∃α.\p A} {\Let ⟨α,u⟩ = y \In b }  & ~⟶~ \ConnectB {\newchan {}} {t:A[B/α]} {a} {u:\p{A[B/α]}} {b} 
+\end{align*}
+
+\subsection{Virtual machine}
+\newcommand\layout[1]{[#1]}
+
+The idea of the VM is to delay cut-elimination in order to get a more
+efficient execution (as in eg. Krivine's abstract machine). Concurrent
+semantics naturally arise.
+
+The VM reduces/executes a number of closures concurrently. (Each closure can be thought of as a process.)
+A closure is a sequent together with an environment. An environment is, for each variable $x:A$ in the context:
+\begin{itemize}
+\item a memory area of layout $\layout A$ which can recieve data for the variable/channel. 
+\item a pointer to the converse memory area (of layout $\layout {\p
+    A}$) in another closure's environment.
+\end{itemize} (Each variable can be thought of as a channel.)  Note
+that we will execute closed programs only, so there is no ``open''
+environment: each variable is connected.
+
+The translation of each type to a memory layout is: ($·$ indicates sequence, $|$ is overlay.)
+\begin{align*}
+  \layout{A⊗B} &= \layout A · \layout B\\
+  \layout{A \pa B} &= \layout A · \layout B\\
+  \layout{A ⊕ B} &= \text{1 bit of info + 1 bit indicating that the data is ready} · (\layout A \mid \layout B)\\
+  \layout{A \& B} &= \layout A \mid \layout B \\
+  \layout{α} &=  ? \\
+  \layout{!A} &= \text{pointer to}~\layout{A} \\
+  \layout{T} &= \epsilon & \text{for neutrals}
+\end{align*}
+
+Operational behaviour of the rules:
+\begin{itemize}
+\item 0: crash
+\item 1: continue
+\item ⊥: terminate (delete the closure)
+\item ⊕: wait for the data to be ready; then chose a branch according
+  to the bit of data. (The memory for the 1 bit + semaphore could be
+  freed here, but probably this should wait for a weaken rule to be
+  run).
+\item \&: write a bit of data (which becomes ready), and continue.
+\item $x:(A ⊗ B)$: add an entry in the context for $y:B$, at location
+  $x+\layout A$ (No communication occurs!)
+\item $A \pa B$: split the environment and spawn a new closure. (No communication either)
+\item Cut: similar to $\pa$ but connect the two closures together.
+\item Ax: Fix the pointers in the connected closures, so that they
+  point to each other. Then terminate.
+\end{itemize}
+
+\subsection{Example}
+Let us prove/program $A ⊗ B ⊸ B ⊗ A$. Putting everything as
+hypotheses, we must find some $p$ with
+%
+\[x : A ⊗ B, x : \p {(B ⊗ A)} ⊢ p\]
+%
+Expanding the definition of negation:
+
+\begin{align*}
+  x : A ⊗ B, x : \p B \pa \p A ⊢ p\\
+  p & = \Let ⟨v:A,w:B⟩ = y \In  \\
+    & \quad \ConnectB x {t:\p B} {u ↔ w} {u : \p A} {t ↔ v}
+\end{align*}
+
+
+\section{Cut and update the world}
+Can linear types change the world?
+
+Assume a type $W$ containing the state of the world. Two sequents can
+be composed by Cut:
+
+\AXC {$W,\p W, \p X ⊢ $}
+\AXC {$W,\p W, \p Y⊢ $ }
+\LL{\sc Cut $W$}\BIC{$W,\p W, \p X, \p Y⊢ $}
+\UIC{$W,\p W, {(\p X ⊗ \p Y)}⊢ $}
+\UIC{$W,\p W, \p {(X \pa Y)}⊢ $}
+\DisplayProof
+
+Maybe if $W$ is abstract enough it's possible to update it in place.
+
+\section{Functional Syntax}
+(fragments; see DILL for the rest)
+\begin{mathpar}
+\inferrule{Γ, x:\p A ⊢ a}{Γ ⊢ \mathsf{return} ~x:\p A~ \mathsf{from} ~a : A}
+\and \inferrule{Γ ⊢ a : A \\ Δ ⊢ b}{Γ,Δ,x:\p A ⊢ \Let x = a \In b}
+\\
+\and \inferrule{Γ ⊢ a : A \\ Δ ⊢ b : B}{Γ,Δ ⊢ ⟨a,b⟩ : A⊗B}
+\\
+% ??? \and \inferrule{Γ ⊢ f : A ⊸ B \\ Δ ⊢ a : B}{Γ ⊢ f a : B}
+\and \inferrule{Γ,x:A ⊢ b:B}{Γ ⊢ λx:A.b : A ⊸ B}
+\\
+\and \inferrule{Γ ⊢ a : A}{Γ ⊢ \Inl a : A ⊕ B}
+ 
+\end{mathpar}
+
+
+\begin{mathpar}
+\end{mathpar}
+
+
+
+\end{document}
+
+
