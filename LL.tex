@@ -113,6 +113,14 @@ We have a judgement $Γ ⊢ t$; with only hypotheses and no conclusion. Remarks:
   \inferrule[∃]{Γ,y:A ⊢ b}{Γ,z:∃α.A ⊢ \Let ⟨α,y⟩ = z \In b }
 \and
   \inferrule[∀]{Γ,x:A[B/α] ⊢ b \\ B\text{~valid} }{Γ,z:∀α.A ⊢ \Let x = z∙B \In b }
+\\
+  \inferrule[?]{!Γ,x:A ⊢ a}{!Γ,x:?A ⊢ \mathsf{thaw~}x \In a }
+\and
+  \inferrule[!]{Γ,x:A ⊢ a}{Γ,x:!A ⊢ \mathsf{freeze~}x \In a }
+\\
+  \inferrule[Weaken]{Γ ⊢ a}{Γ,x:!A ⊢ \mathsf{free~}x \In a }
+\and
+  \inferrule[Contract]{Γ,x:!A,y:!A ⊢ a}{Γ,x:!A ⊢ \Let x = \mathsf{copy~}x \In a }
 \end{mathpar}
 
 Explanation of the rules:
@@ -163,33 +171,31 @@ TODO: exponentials.
 \ConnectB {\newchan {}} {x:∀α.A} {\Let t = x ∙ B \In a} {y:∃α.\p A} {\Let ⟨α,u⟩ = y \In b }  & ~⟶~ \ConnectB {\newchan {}} {t:A[B/α]} {a} {u:\p{A[B/α]}} {b} 
 \end{align*}
 
-\subsection{Virtual machine}
+\subsection{Abstract machine}
 \newcommand\layout[1]{[#1]}
 
-The idea of the VM is to delay cut-elimination in order to get a more
+The idea of the AM is to delay cut-elimination in order to get a more
 efficient execution (as in eg. Krivine's abstract machine). Concurrent
 semantics naturally arise.
 
-The VM reduces/executes a number of closures concurrently. (Each closure can be thought of as a process.)
-A closure is a sequent together with an environment. An environment is, for each variable $x:A$ in the context:
-\begin{itemize}
-\item a memory area of layout $\layout A$ which can recieve data for the variable
-\item a pointer to the converse memory area (of layout $\layout {\p
-    A}$) in another closure's environment.
-\end{itemize} (Each variable can be thought of as a channel.)  Note
+The AM reduces/executes a number of closures concurrently. (Each
+closure can be thought of as a process.)  A closure is a sequent
+together with an environment. An environment has for each variable
+$x:A$ in the context a pointer to a memory area of layout $\layout A$.
+(Each variable can be thought of as a channel.)  Note
 that we will execute closed programs only, so there is no ``open''
 environment: each variable is connected.
 
 The translation of each type to a memory layout is: ($·$ indicates sequence, $|$ is overlay.)
 \begin{align*}
-  \layout{A⊗B} &= \layout A · \layout B\\
-  \layout{A \pa B} &= \layout A · \layout B\\
-  \layout{A ⊕ B} &= \text{1 bit of info + 1 bit indicating that the data is ready} · (\layout A \mid \layout B)\\
-  \layout{A \& B} &= \layout A \mid \layout B \\
-  \layout{α} &=  ? \\
-  \layout{!A} &= \text{pointer to}~\layout{A} \\
+  \layout{A⊗B} = \layout{A \pa B}  &= \layout A · \layout B\\
+   \layout{A ⊕ B} = \layout{A \& B} &= \text{1 bit of info + 1 bit indicating that the data is ready} · (\layout A \mid \layout B)\\
+  \layout{α} = \layout{\p{α}} &=  (never executed) \\
+  \layout{!A} = \layout{?A} &= \text{pointer to}~\layout{A} \\
   \layout{T} &= \epsilon & T ∈ \braces{⊤,⊥,0,1}
 \end{align*}
+Note that $\layout A = \layout{\p A}$, but is used differently, see below.
+
 
 Operational behaviour of the rules:
 \begin{itemize}
@@ -204,10 +210,27 @@ Operational behaviour of the rules:
 \item $x:(A ⊗ B)$: add an entry in the context for $y:B$, at location
   $x+\layout A$ (No communication occurs!)
 \item $A \pa B$: split the environment and spawn a new closure. (No communication either)
-\item Cut: similar to $\pa$ but connect the two closures together.
-\item Ax: Fix the pointers in the connected closures, so that they
-  point to each other. Then terminate.
+\item Cut/Quantifiers: transmit a closure capable of copying data of
+  the new type.
+\item Cut: similar to $\pa$ but connects the two closures directly together.
+\item Ax: If the pointers are equal, do nothing and terminate. If not
+  switch to the closure which does the copy.
+\item ?,!: change the env. to point directy to the data in the heap.
+\item Weaken: free memory in the heap
+\item Contract: allocate a $\layout A$ in the heap, and copy the data
+  from $x$.  
+
+  Note about wasting memory: 
+
+  'Contract' may not do an actual copy, but just copy the pointer, if
+  it is guaranteed that the type $A$ only provides, not accepts, data
+  (or if copy-on-write is available). 
+
+  This could be useful to implement a lazy-evaluated language, but one
+  can expect that in ``low-level'' programs, the programmer will use
+  'contract' only when actual copies are needed.
 \end{itemize}
+
 
 \subsection{Example}
 Let us prove/program $A ⊗ B ⊸ B ⊗ A$. Putting everything as
