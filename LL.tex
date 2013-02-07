@@ -8,7 +8,7 @@
 \usepackage{ cmll }
 \EnableBpAbbreviations
 
-\title{An ISWIM syntax for linear-logic sequents}
+\title{Linear Logic for Programmers}
 \author{Jean-Philippe Bernardy}
 \affil{Chalmers University of Technology and University of Gothenburg\\
   \texttt{bernardy@chalmers.se}}
@@ -49,7 +49,7 @@
 
 \section{Core LL}
 
-\subsection{Syntax}
+\subsection{Types}
 neutral in parens
 \[
 \begin{array}{ccc}
@@ -66,7 +66,7 @@ neutral in parens
 {$A ~\&~ B$}& Either $A$ or $B$ (the program choses which)\\
 \end{tabular}
 
-\subsection{Types}
+\subsection{An ISWIM syntax for linear-logic sequents}
 
 We have a judgement $Γ ⊢ t$; with only hypotheses and no conclusion. Remarks:
 \begin{itemize}
@@ -158,6 +158,20 @@ Explanation of the rules:
 \end{itemize}
 TODO: exponentials.
 
+\subsection{Example}
+Let us prove/program $A ⊗ B ⊸ B ⊗ A$. Putting everything as
+hypotheses, we must find some $p$ with
+%
+\[x : A ⊗ B, y : \p {(B ⊗ A)} ⊢ p\]
+%
+Expanding the definition of negation:
+
+\begin{align*}
+  x : A ⊗ B, y : \p B \pa \p A ⊢ p\\
+  p & = \Let ⟨v:A,w:B⟩ = x \In  \\
+    & \quad \ConnectB y {t:\p B} {t ↔ w} {u : \p A} {u ↔ v}
+\end{align*}
+
 \subsection{Reduction rules (Incomplete)}
 
 \begin{mathpar}
@@ -171,12 +185,14 @@ TODO: exponentials.
 \ConnectB {\newchan {}} {x:∀α.A} {\Let t = x ∙ B \In a} {y:∃α.\p A} {\Let ⟨α,u⟩ = y \In b }  & ~⟶~ \ConnectB {\newchan {}} {t:A[B/α]} {a} {u:\p{A[B/α]}} {b} 
 \end{align*}
 
+
 \subsection{Abstract machine}
 \newcommand\layout[1]{[#1]}
 
 The idea of the AM is to delay cut-elimination in order to get a more
-efficient execution (as in eg. Krivine's abstract machine). Concurrent
-semantics naturally arise.
+efficient execution (as in eg. Krivine's abstract machine). (One might
+say that the AM realises ``cut-preservation''.) Concurrent semantics
+naturally arise.
 
 The AM reduces/executes a number of closures concurrently. (Each
 closure can be thought of as a process.)  A closure is a sequent
@@ -230,21 +246,6 @@ Operational behaviour of the rules:
   can expect that in ``low-level'' programs, the programmer will use
   'contract' only when actual copies are needed.
 \end{itemize}
-
-
-\subsection{Example}
-Let us prove/program $A ⊗ B ⊸ B ⊗ A$. Putting everything as
-hypotheses, we must find some $p$ with
-%
-\[x : A ⊗ B, y : \p {(B ⊗ A)} ⊢ p\]
-%
-Expanding the definition of negation:
-
-\begin{align*}
-  x : A ⊗ B, y : \p B \pa \p A ⊢ p\\
-  p & = \Let ⟨v:A,w:B⟩ = x \In  \\
-    & \quad \ConnectB y {t:\p B} {t ↔ w} {u : \p A} {u ↔ v}
-\end{align*}
 
 
 \section{Cut and update the world}
