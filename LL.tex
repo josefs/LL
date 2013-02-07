@@ -80,7 +80,9 @@ We have a judgement $Γ ⊢ t$; with only hypotheses and no conclusion. Remarks:
   introduction rules are recovered using {\sc Ax} and {\sc Cut}.
 \item In sum, when we have an set of hypothesis, if the program is
   ``fed'' inputs for all of them but one, the last one will ``spit
-  out'' a result.
+  out'' a result. (In fact, where and how data is read/written cannot
+  be predicted from the shallow structure of the sequent, one must to
+  a deep analysis of the types.)
 \end{itemize}
 
 \newcommand{\chan}[3]{#2 \stackrel{#1}{↔} #3}
@@ -120,7 +122,7 @@ We have a judgement $Γ ⊢ t$; with only hypotheses and no conclusion. Remarks:
 \\
   \inferrule[Weaken]{Γ ⊢ a}{Γ,x:!A ⊢ \mathsf{free~}x \In a }
 \and
-  \inferrule[Contract]{Γ,x:!A,y:!A ⊢ a}{Γ,x:!A ⊢ \Let x = \mathsf{copy~}x \In a }
+  \inferrule[Contract]{Γ,x:!A,y:!A ⊢ a}{Γ,x:!A ⊢ \Let y = \mathsf{copy~}_Ax \In a }
 \end{mathpar}
 
 Explanation of the rules:
@@ -246,6 +248,8 @@ Operational behaviour of the rules:
   can expect that in ``low-level'' programs, the programmer will use
   'contract' only when actual copies are needed.
 \end{itemize}
+Note that the structural/! computation rules are easy in the AM
+compared to the cut-elim.
 
 
 \section{Cut and update the world}
